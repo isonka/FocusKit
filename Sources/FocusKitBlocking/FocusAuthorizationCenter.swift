@@ -4,15 +4,11 @@ import Foundation
 /// Wrapper around FamilyControls authorization APIs.
 @MainActor
 public struct FocusAuthorizationCenter: Sendable {
-    private let center: AuthorizationCenter
-
     /// Creates an authorization wrapper.
-    public init(center: AuthorizationCenter = AuthorizationCenter.shared) {
-        self.center = center
-    }
+    public init() {}
 
     /// Requests FamilyControls authorization in `.individual` mode.
     public func requestAuthorization() async throws {
-        try await center.requestAuthorization(for: .individual)
+        try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
     }
 }

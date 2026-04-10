@@ -6,21 +6,26 @@ final class FocusTimerTests: XCTestCase {
         let clock = MockClock(now: Date())
         let timer = FocusTimer(clock: clock, tickInterval: 0.5)
         let stream = await timer.countdown(duration: 2)
+        let recorder = TickRecorder()
 
-        var ticks: [FocusTimer.Tick] = []
         let task = Task {
             for await tick in stream {
-                ticks.append(tick)
+                await recorder.append(tick)
             }
         }
 
-        clock.advance(by: 0.5)
-        clock.advance(by: 0.5)
-        clock.advance(by: 0.5)
-        clock.advance(by: 0.5)
-        clock.advance(by: 0.5)
-        _ = await task.result
+        let advancer = Task {
+            for _ in 0..<20 {
+                clock.advance(by: 0.5)
+                await Task.yield()
+            }
+        }
 
+        let finished = await waitForTaskCompletion(task, timeoutNanoseconds: 1_000_000_000)
+        _ = await advancer.result
+
+        let ticks = await recorder.all()
+        XCTAssertTrue(finished, "Timer stream did not complete within timeout.")
         XCTAssertFalse(ticks.isEmpty)
         XCTAssertEqual(ticks.last?.remaining ?? 1, 0, accuracy: 0.001)
     }
@@ -33,8 +38,49 @@ final class FocusTimerTests: XCTestCase {
             for await _ in stream {}
         }
         await timer.cancel()
-        clock.advance(by: 10)
-        _ = await task.result
-        XCTAssertTrue(true)
+
+        let advancer = Task {
+            // Keep advancing/yielding so any pending mock sleeps are unblocked.
+            for _ in 0..<20 {
+                clock.advance(by: 0.5)
+                await Task.yield()
+            }
+        }
+
+        let finished = await waitForTaskCompletion(task, timeoutNanoseconds: 1_000_000_000)
+        _ = await advancer.result
+
+        XCTAssertTrue(finished, "Cancellation did not terminate timer stream within timeout.")
+    }
+
+    private func waitForTaskCompletion(
+        _ task: Task<Void, Never>,
+        timeoutNanoseconds: UInt64
+    ) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                await task.value
+                return true
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: timeoutNanoseconds)
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
+        }
+    }
+}
+
+private actor TickRecorder {
+    private var storage: [FocusTimer.Tick] = []
+
+    func append(_ tick: FocusTimer.Tick) {
+        storage.append(tick)
+    }
+
+    func all() -> [FocusTimer.Tick] {
+        storage
     }
 }

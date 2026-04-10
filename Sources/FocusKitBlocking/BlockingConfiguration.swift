@@ -1,5 +1,5 @@
 import Foundation
-import FamilyControls
+@preconcurrency import FamilyControls
 
 /// User-selected blocking preferences used by `FocusBlocker`.
 public struct BlockingConfiguration: Sendable {

@@ -6,7 +6,11 @@ final class FocusSessionTests: XCTestCase {
         let start = Date()
         let end = start.addingTimeInterval(60)
         let session = FocusSession(type: .work, startedAt: start, endedAt: end, completedFully: true)
-        XCTAssertEqual(session.duration, 60, accuracy: 0.001)
+        guard let duration = session.duration else {
+            XCTFail("Expected completed session to have duration.")
+            return
+        }
+        XCTAssertEqual(duration, 60, accuracy: 0.001)
     }
 
     func testDurationNilWhenOngoing() {

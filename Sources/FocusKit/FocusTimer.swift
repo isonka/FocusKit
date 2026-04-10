@@ -40,6 +40,11 @@ final class MockClock: FocusClockProtocol, @unchecked Sendable {
         let target = now.addingTimeInterval(Double(nanoseconds) / 1_000_000_000)
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             lock.lock()
+            if target <= _now {
+                lock.unlock()
+                continuation.resume()
+                return
+            }
             sleepers.append((target: target, continuation: continuation))
             lock.unlock()
         }
