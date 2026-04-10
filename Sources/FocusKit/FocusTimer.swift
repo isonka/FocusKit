@@ -98,9 +98,13 @@ actor FocusTimer {
     func countdown(duration: TimeInterval) -> AsyncStream<Tick> {
         cancel()
         return AsyncStream { continuation in
-            countdownTask = Task { [clock, tickInterval] in
+            countdownTask = Task { [weak self, clock, tickInterval] in
+                guard let self else {
+                    continuation.finish()
+                    return
+                }
                 let start = clock.now
-                var elapsedInBackground: TimeInterval = 0
+                await self.setBackgroundedAt(nil)
                 #if canImport(UIKit)
                 let center = NotificationCenter.default
                 let bgObserver = center.addObserver(
@@ -116,9 +120,8 @@ actor FocusTimer {
                     queue: nil
                 ) { [weak self] _ in
                     Task {
-                        if let started = await self?.takeBackgroundedAt() {
-                            elapsedInBackground += clock.now.timeIntervalSince(started)
-                        }
+                        // Keep wall-clock progression: foreground transition only clears marker.
+                        await self?.setBackgroundedAt(nil)
                     }
                 }
                 defer {
@@ -128,7 +131,7 @@ actor FocusTimer {
                 #endif
 
                 while !Task.isCancelled {
-                    let elapsed = max(0, clock.now.timeIntervalSince(start) - elapsedInBackground)
+                    let elapsed = max(0, clock.now.timeIntervalSince(start))
                     let remaining = max(0, duration - elapsed)
                     let progress = duration == 0 ? 1 : min(1, max(0, elapsed / duration))
                     continuation.yield(Tick(remaining: remaining, progress: progress))
@@ -150,13 +153,8 @@ actor FocusTimer {
     }
 
     #if canImport(UIKit)
-    private func setBackgroundedAt(_ date: Date) {
+    private func setBackgroundedAt(_ date: Date?) {
         backgroundedAt = date
-    }
-
-    private func takeBackgroundedAt() -> Date? {
-        defer { backgroundedAt = nil }
-        return backgroundedAt
     }
     #endif
 }

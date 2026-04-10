@@ -30,7 +30,7 @@ FocusKit fills a common gap in the iOS ecosystem: there are many complete Pomodo
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/your-org/FocusKit.git", from: "0.1.0")
+    .package(url: "https://github.com/isonka/FocusKit.git", from: "0.1.0")
 ]
 ```
 
@@ -79,10 +79,3 @@ await blocker.attach()
 | Typical Pomodoro apps | No | No | N/A | No |
 | App templates | Partial | No | Partial | Partial |
 | FocusKit | Yes | Yes | Yes | Yes |
-
-## Related Projects
-
-- [HealthSnapKit](https://github.com/Kilo-Loco/HealthSnapKit)
-- [context-trimmer](https://github.com/unknown/context-trimmer)
-- [mobile-context-trimmer](https://github.com/unknown/mobile-context-trimmer)
-- [meeting-lens](https://github.com/unknown/meeting-lens)
