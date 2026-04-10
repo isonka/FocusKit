@@ -8,7 +8,7 @@ public struct FocusStatistics: Sendable, Equatable {
     public let totalFocusTime: TimeInterval
     /// Highest number of consecutive days with at least one work session.
     public let longestStreak: Int
-    /// Current consecutive-day streak ending on the latest day in range.
+    /// Current consecutive-day streak ending today or yesterday.
     public let currentStreak: Int
     /// Average work sessions per day across days represented in the range.
     public let averageSessionsPerDay: Double
@@ -60,6 +60,14 @@ public struct FocusStatistics: Sendable, Equatable {
             }
         }
         longest = max(longest, currentRun)
-        return (longest, currentRun)
+
+        let today = calendar.startOfDay(for: Date())
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
+              let latestDay = uniqueDays.last else {
+            return (longest, 0)
+        }
+
+        let isCurrent = calendar.isDate(latestDay, inSameDayAs: today) || calendar.isDate(latestDay, inSameDayAs: yesterday)
+        return (longest, isCurrent ? currentRun : 0)
     }
 }

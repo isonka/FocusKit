@@ -25,4 +25,22 @@ final class FocusStatisticsTests: XCTestCase {
         XCTAssertEqual(stats.currentStreak, 3)
         XCTAssertEqual(stats.completionRate, 2.0 / 3.0, accuracy: 0.0001)
     }
+
+    func testCurrentStreakIsZeroWhenLatestSessionIsOlderThanYesterday() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let fiveDaysAgo = today.addingTimeInterval(-5 * 24 * 60 * 60)
+        let fourDaysAgo = today.addingTimeInterval(-4 * 24 * 60 * 60)
+
+        let sessions = [
+            FocusSession(type: .work, startedAt: fiveDaysAgo, endedAt: fiveDaysAgo.addingTimeInterval(1500), completedFully: true),
+            FocusSession(type: .work, startedAt: fourDaysAgo, endedAt: fourDaysAgo.addingTimeInterval(1500), completedFully: true),
+        ]
+
+        let range = fiveDaysAgo...today
+        let stats = FocusStatistics.build(from: sessions, in: range)
+
+        XCTAssertEqual(stats.longestStreak, 2)
+        XCTAssertEqual(stats.currentStreak, 0)
+    }
 }
