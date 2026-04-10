@@ -1,0 +1,22 @@
+disabled_rules:
+  - todo
+
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - first_where
+  - force_unwrapping
+  - sorted_imports
+
+line_length:
+  warning: 140
+  error: 180
+
+identifier_name:
+  min_length: 2
+  excluded:
+    - id
+
+type_body_length:
+  warning: 350
+  error: 500
